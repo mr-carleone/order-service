@@ -28,7 +28,8 @@ export default defineComponent({
     const sendMessage = async () => {
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
-          await axios.post("http://localhost:3000/send", {
+          // http://localhost:3000 for server node js
+          await axios.post("http://localhost:8000/send", {
             message: message.value,
           });
           message.value = "";
@@ -41,7 +42,8 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      ws = new WebSocket("ws://localhost:3000");
+      // ws://localhost:3000 for server node js
+      ws = new WebSocket("ws://localhost:8000/ws");
 
       ws.onopen = () => {
         console.log("WebSocket connection opened");
