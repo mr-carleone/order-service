@@ -7,9 +7,16 @@
       placeholder="Введите свое сообщение..."
     />
     <el-button type="primary" @click="sendMessage">Отправить</el-button>
+    <el-button type="primary" @click="getMessageCount"
+      >Получить количество сообщений</el-button
+    >
     <div v-if="receivedMessage">
       <h2>Received Message:</h2>
       <p>{{ receivedMessage }}</p>
+    </div>
+    <div v-if="messageCount !== null">
+      <h2>Количество сообщений:</h2>
+      <p>{{ messageCount }}</p>
     </div>
   </div>
 </template>
@@ -23,12 +30,12 @@ export default defineComponent({
   setup() {
     const message = ref("");
     const receivedMessage = ref("");
+    const messageCount = ref<number | null>(null);
     let ws: WebSocket | null = null;
 
     const sendMessage = async () => {
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
-          // http://localhost:3000 for server node js
           await axios.post("http://localhost:8000/send", {
             message: message.value,
           });
@@ -41,8 +48,16 @@ export default defineComponent({
       }
     };
 
+    const getMessageCount = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/message_count");
+        messageCount.value = response.data.count;
+      } catch (error) {
+        console.error("Error getting message count:", error);
+      }
+    };
+
     onMounted(() => {
-      // ws://localhost:3000 for server node js
       ws = new WebSocket("ws://localhost:8000/ws");
 
       ws.onopen = () => {
@@ -50,8 +65,9 @@ export default defineComponent({
       };
 
       ws.onmessage = (event) => {
-        console.log(`Received message: ${event.data}`);
-        receivedMessage.value = event.data;
+        const parsedMessage = JSON.parse(event.data);
+        console.log(`Received message: ${parsedMessage.message}`);
+        receivedMessage.value = parsedMessage.message;
       };
 
       ws.onerror = (error) => {
@@ -66,7 +82,9 @@ export default defineComponent({
     return {
       message,
       receivedMessage,
+      messageCount,
       sendMessage,
+      getMessageCount,
     };
   },
 });
